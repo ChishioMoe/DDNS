@@ -25,8 +25,8 @@ echo
 # 简单的使用Clodflare API来实现DDNS的脚本
 NEW_IPv4=$(curl -s http://ipv4.icanhazip.com)
 NEW_IPv6=$(curl -s http://ipv6.icanhazip.com)
-CURRENT_IPv4=$(touch $(dirname "$0")/current_ipv4.txt)
-CURRENT_IPv6=$(touch $(dirname "$0")/current_ipv6.txt)
+CURRENT_IPv4=$(touch "$(pwd)/current_ipv4.txt")
+CURRENT_IPv6=$(touch "$(pwd)/current_ipv6.txt")
 CURRENT_TIME=$(date +"%F %T")
 
 # 填入DDNS域名
