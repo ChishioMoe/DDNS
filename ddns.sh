@@ -2,25 +2,104 @@
 
 #配置颜色变量
 GREEN="\033[32m"
-RED="\033[31m"
-YELLOW="\033[0;33m"
-WHITE="\033[0;37m"
-BLUE="\033[0;36m"
+RED="\033[4;31m"
+YELLOW="\033[4;33m"
+WHITE="\033[4;37m"
+BLUE="\033[4;36m"
 TE="\033[0m"
- 
+
+# 获取终端宽度
+TERM_WIDTH=$(tput cols)
+#!/bin/bash
+
+# 颜色定义
+RED='\033[1;31m'
+YELLOW='\033[1;33m'
+WHITE='\033[1;37m'
+BLUE='\033[1;34m'
+TE='\033[0m'
+
+# 获取终端宽度
+#!/bin/bash
+
+# 颜色定义
+RED='\033[1;31m'
+YELLOW='\033[1;33m'
+WHITE='\033[1;37m'
+BLUE='\033[1;34m'
+GREEN='\033[1;32m'
+TE='\033[0m'
+
+# 获取终端宽度
+TERM_WIDTH=$(tput cols)
+
+# 居中输出函数
+print_centered_line() {
+    local line_text="$1"
+    local text_length=${#line_text}
+    local spaces=$(( (TERM_WIDTH - text_length) / 2 ))
+
+    # 如果字符数量不均匀，右边多加一个空格
+    if (( (TERM_WIDTH - text_length) % 2 != 0 )); then
+        echo -e "$(printf '%*s' $((spaces+1)))${line_text}$(printf '%*s' $spaces)"
+    else
+        echo -e "$(printf '%*s' $spaces)${line_text}$(printf '%*s' $spaces)"
+    fi
+}
+
+full_line() {
+    WIDTH=$((TERM_WIDTH - 3))
+    fill=$(printf '^%.0s' $(seq 1 $WIDTH))  # 根据终端宽度生成填充字符
+
+    printf "${GREEN}%s${TE}\n" "$fill"
+}
+
+# 输出心形框
+full_heart() {
+    local content1="$1"
+    local content2="$2"
+    local content3="$3"
+    local content4="$4"
+    local width=$((TERM_WIDTH / 4 - 10))
+    local height=10
+
+    for ((i=0; i<height; i++)); do
+        line=""
+        case $i in
+            0) line+="   ***     ***   "; line+="   ***     ***   "; line+="   ***     ***   "; line+="   ***     ***   " ;;
+            1) line+=" *     * *     * "; line+=" *     * *     * "; line+=" *     * *     * "; line+=" *     * *     * " ;;
+            2) line+="*       *       *"; line+="*       *       *"; line+="*       *       *"; line+="*       *       *" ;;
+            3) line+="${content1}" ;;
+            4) line+="${content2}" ;;
+            5) line+="${content3}" ;;
+            6) line+="${content4}" ;;
+            7) line+="  *           *  "; line+="  *           *  "; line+="  *           *  "; line+="  *           *  " ;;
+            8) line+="     *     *     "; line+="     *     *     "; line+="     *     *     "; line+="     *     *     " ;;
+            9) line+="        *        "; line+="        *        "; line+="        *        "; line+="        *        " ;;
+        esac
+        print_centered_line "$line"
+    done
+}
 
 # 署名清空屏幕
-Author_info(){
-clear
-echo -e "     ${GREEN}######################################
-     #            ${RED}DDNS一键脚本            ${GREEN}#
-     #${YELLOW} 特点：API Token即可，不需要API KEY ${GREEN}#
-     #             作者: ${WHITE}汐颜             ${GREEN}#
-     #         ${BLUE}https://xiyan.blog         ${GREEN}#
-     ######################################${TE}"
-echo
+Author_info() {
+    clear
+    # 使用心形框包裹内容
+    local content1="${RED}         DDNS 一键脚本  ${TE}"
+    local content2="${YELLOW}     特点：API Token即可，不需要API KEY ${TE}"
+    local content3="${WHITE}               作者: 汐颜        ${TE}"
+    local content4="${BLUE}           网站：https://xiyan.blog ${TE}"
+    full_heart "$content1" "$content2" "$content3" "$content4"
 }
+
 Author_info
+
+
+
+
+
+
+
 # 检查是否为root用户
 check_root(){
     if [[ $(whoami) != "root" ]]; then
