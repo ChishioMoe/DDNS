@@ -11,12 +11,12 @@ TE="\033[0m"
 
 
 clear
-echo -e "${GREEN}######################################
-#            ${RED}DDNS一键脚本            ${GREEN}#
-#${YELLOW} 特点：API Token即可，不需要API KEY ${GREEN}#
-#             作者: ${WHITE}汐颜             ${GREEN}#
-#         ${BLUE}https://xiyan.blog         ${GREEN}#
-######################################${TE}"
+echo -e "     ${GREEN}######################################
+     #            ${RED}DDNS一键脚本            ${GREEN}#
+     #${YELLOW} 特点：API Token即可，不需要API KEY ${GREEN}#
+     #             作者: ${WHITE}汐颜             ${GREEN}#
+     #         ${BLUE}https://xiyan.blog         ${GREEN}#
+     ######################################${TE}"
 echo
 
 
@@ -25,8 +25,8 @@ echo
 # 简单的使用Clodflare API来实现DDNS的脚本
 NEW_IPv4=$(curl -s http://ipv4.icanhazip.com)
 NEW_IPv6=$(curl -s http://ipv6.icanhazip.com)
-CURRENT_IPv4=$(cat $(dirname "$0")/current_ipv4.txt)
-CURRENT_IPv6=$(cat $(dirname "$0")/current_ipv6.txt)
+CURRENT_IPv4=$(touch $(dirname "$0")/current_ipv4.txt)
+CURRENT_IPv6=$(touch $(dirname "$0")/current_ipv6.txt)
 CURRENT_TIME=$(date +"%F %T")
 
 # 填入DDNS域名
@@ -54,12 +54,7 @@ RECORD_ID=$(
 
 
 
-echo -e "\033[1;4;47;31m $(curl -X GET "https://api.cloudflare.com/client/v4/zones/f6d2d20e8b222f0d900062db7e8f7c58/dns_records?name=hinetlamhosting.xiliqing.top" \
--H "Authorization: Bearer QhDrh8pFgvUI9hav_5LnYTEreZAEXewjrPsStuBv" \
--H "Content-Type: application/json") \033[0m"
-echo
-    ZONE_ID="f6d2d20e8b222f0d900062db7e8f7c58"
-    API_TOKEN="QhDrh8pFgvUI9hav_5LnYTEreZAEXewjrPsStuBv"
+
     curl -X GET "https://api.cloudflare.com/client/v4/zones/f6d2d20e8b222f0d900062db7e8f7c58/dns_records?name=hinetlamhosting.xiliqing.top" \
         -H "Authorization: Bearer QhDrh8pFgvUI9hav_5LnYTEreZAEXewjrPsStuBv" \
         -H "Content-Type: application/json" | jq '.result[] | .id'
