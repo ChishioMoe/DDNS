@@ -12,6 +12,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/ChishioMoe/DDNS/refs/heads/ma
 ```
 bash <(wget -qO- https://ghp.ci/raw.githubusercontent.com/ChishioMoe/DDNS/refs/heads/main/ddns.sh)
 ```
+--- 
 ## API令牌获取方法
 - 进入网站[CloudFlare](https://dash.cloudflare.com)，点击右上角个人资料
 - 进入左栏API令牌，点击右侧新建，选择DNS模板 <br>
