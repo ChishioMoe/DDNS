@@ -14,5 +14,7 @@ bash <(wget -qO- https://ghp.ci/raw.githubusercontent.com/ChishioMoe/DDNS/refs/h
 ```
 ## API令牌获取方法
 - 进入网站[CloudFlare](https://dash.cloudflare.com)，点击右上角个人资料
-- 进入左栏API令牌，点击右侧新建
-- 选择创建DNS模板，在权限中添加区域-区域-读取（Zone-Zone-Read）即可
+- 进入左栏API令牌，点击右侧新建，选择DNS模板 <br>
+    <img width="88%" alt="截屏2024-09-22 上午10 14 40" src="https://github.com/user-attachments/assets/348e91e8-4a60-429a-81be-8f639c331886">
+- 如下配置即可 <br>
+    <img width="88%" alt="截屏2024-09-22 上午10 20 01" src="https://github.com/user-attachments/assets/74511407-0bfd-487c-98a5-d0053fc8ad77">
