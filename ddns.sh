@@ -2,33 +2,12 @@
 
 #配置颜色变量
 GREEN="\033[32m"
-RED="\033[4;31m"
-YELLOW="\033[4;33m"
-WHITE="\033[4;37m"
-BLUE="\033[4;36m"
+RED="\033[31m"
+YELLOW="\033[33m"
+WHITE="\033[37m"
+BLUE="\033[36m"
 TE="\033[0m"
 
-# 获取终端宽度
-TERM_WIDTH=$(tput cols)
-#!/bin/bash
-
-# 颜色定义
-RED='\033[1;31m'
-YELLOW='\033[1;33m'
-WHITE='\033[1;37m'
-BLUE='\033[1;34m'
-TE='\033[0m'
-
-# 获取终端宽度
-#!/bin/bash
-
-# 颜色定义
-RED='\033[1;31m'
-YELLOW='\033[1;33m'
-WHITE='\033[1;37m'
-BLUE='\033[1;34m'
-GREEN='\033[1;32m'
-TE='\033[0m'
 
 # 获取终端宽度
 TERM_WIDTH=$(tput cols)
@@ -130,7 +109,7 @@ install_ddns(){
     # 如果主要脚本不存在，则强制下载主要脚本到指定目标上，并授予执行权限
     if [ ! -f "/root/DDNS/ddns" ]; then
         echo "开始下载脚本..."
-        # curl -o /root/DDNS/ddns -d /root/DDNS/ https://ghp.ci/raw.githubusercontent.com/ChishioMoe/DDNS/refs/heads/main/ddns.sh && chmod +x /usr/bin/ddns
+        # curl -s -o /root/DDNS/ddns -d /root/DDNS/ https://ghp.ci/raw.githubusercontent.com/ChishioMoe/DDNS/refs/heads/main/ddns.sh && chmod +x /usr/bin/ddns
     fi
     
 }
@@ -155,8 +134,7 @@ set_ddnscfg() {
 if [ ! -f "$CONFIG_FILE" ]; then
     set_ddnscfg
 else
-    echo "配置文件已存在。是否要更新？(y/n)："
-    read UPDATE_CONFIG
+    read -p "$(echo -e "\033[1;4;47;31m 配置文件已存在, 是否更新？(y/n)：${TE}") " UPDATE_CONFIG
     if [ "$UPDATE_CONFIG" == "y" ]; then
         set_ddnscfg
     else
@@ -176,8 +154,9 @@ if [ ! -f "$DDNSIP_SCRIPT" ]; then
   cat << 'EOF' > "$DDNSIP_SCRIPT"
 #!/bin/bash
 source /etc/ddnscfg.sh
-echo "API_TOKEN: $API_TOKEN"
-echo "DDNS_DOMAIN: $DDNS_DOMAIN"
+echo -e "当前API_TOKEN为: \033[4;33m$API_TOKEN\033[0m"
+echo -e "当前域名为: \033[4;33m$DDNS_DOMAIN\033[0m"
+echo "脚本运行中..."
 # 加载配置文件
 # 获取当前公网IP
 NEW_IPv4=$(curl -s http://ipv4.icanhazip.com)
@@ -199,17 +178,18 @@ RECORD_ID=$(
 
 
 if [ -n "$NEW_IPv4" ] ; then
-  curl -k -X PUT "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$RECORD_ID" \
+  curl -s -k -X PUT "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$RECORD_ID" \
     -H "Authorization: Bearer $API_TOKEN" \
     -H "Content-Type: application/json" \
-    --data '{"type":"A","name":"'$DDNS_DOMAIN'","content":"'$NEW_IPv4'","ttl":1,"proxied":false}' > /dev/null
-  echo -e "\033[1;4;47;31m IP已更新为：$NEW_IPv4 \033[0m"
+    --data '{"type":"A","name":"'$DDNS_DOMAIN'","content":"'$NEW_IPv4'","ttl":1,"proxied":false}' &> /dev/null
+    
+  echo -e "\033[33mIP已更新为：\033[0m\033[1;4;47;31m $NEW_IPv4 \033[0m"
 elif [ -n "$NEW_IPv6" ] ; then
-  curl -k -X PUT "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$RECORD_ID" \
+  curl -s -k -X PUT "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$RECORD_ID" \
     -H "Authorization: Bearer $API_TOKEN" \
     -H "Content-Type: application/json" \
-    --data '{"type":"AAAA","name":"'$DDNS_DOMAIN'","content":"'$NEW_IPv6'","ttl":1,"proxied":false}' > /dev/null
-  echo -e "\033[1;4;47;31m IP已更新为：$NEW_IPv6 \033[0m"
+    --data '{"type":"AAAA","name":"'$DDNS_DOMAIN'","content":"'$NEW_IPv6'","ttl":1,"proxied":false}' &> /dev/null
+  echo -e "\033[33mIP已更新为：\033[0m\033[1;4;47;31m $NEW_IPv6 \033[0m"
 else
   if [ -z "$NEW_IPv4" ] ; then
     echo " Failed to get IPv4 address" 
@@ -226,24 +206,6 @@ chmod +x "$DDNSIP_SCRIPT"
 fi
 /bin/bash $DDNSIP_SCRIPT
 
-existing_job=$(crontab -l | grep "$DDNSIP_SCRIPT")
-if [ -z "$existing_job" ]; then
-    read -p "$(echo -e "\033[1;4;47;31m 请输入IP刷新间隔（min）： \033[0m") " TIME
-    # 创建定时任务
-    (crontab -l ; echo "*/$TIME * * * * /bin/bash $DDNSIP_SCRIPT") | crontab -
-    echo -e "\033[1;4;47;31m 定时任务已创建，脚本运行成功！ \033[0m"
-else
-    echo "当前定时任务为：$existing_job"
-    read -p "$(echo -e "\033[1;4;47;31m 是否要修改更新间隔？(y/n)： \033[0m") " MODIFY_INTERVAL
-    if [ "$MODIFY_INTERVAL" == "y" ]; then
-        read -p "$(echo -e "\033[1;4;47;31m 请输入新的IP刷新间隔（min）： \033[0m") " TIME
-        # 更新定时任务
-        (crontab -l | grep -v "$DDNSIP_SCRIPT"; echo "*/$TIME * * * * /bin/bash $DDNSIP_SCRIPT") | crontab -
-        echo -e "\033[1;4;47;31m 定时任务已更新，脚本运行成功！ \033[0m"
-    else
-        echo -e "\033[1;4;47;31m 使用现有定时任务，脚本运行成功！ \033[0m"
-    fi
-fi
 # 创建定时任务
 existing_job=$(crontab -l | grep "$DDNSIP_SCRIPT")
 if [ -z "$existing_job" ]; then
@@ -254,17 +216,17 @@ if [ -z "$existing_job" ]; then
 else
     interval=$(echo "$existing_job" | sed -E 's|^\*/([0-9]+).*|\1|')
     interval="$interval 分钟"
-    echo -e "\033[1;4;47;31m 当前IP刷新间隔为：$interval \033[0m"
-    read -p "$(echo -e "\033[1;4;47;31m 是否要修改IP刷新间隔？(y/n)： \033[0m") " MODIFY_INTERVAL
+    echo -e "${YELLOW}当前IP刷新间隔为：${TE}\033[1;4;47;31m $interval ${TE}"
+    read -p "$(echo -e "\033[1;4;47;31m 是否要修改IP刷新间隔？(y/n)： ${TE}") " MODIFY_INTERVAL
     if [ "$MODIFY_INTERVAL" == "y" ]; then
-        read -p "$(echo -e "\033[1;4;47;31m 请输入新的IP刷新间隔（min）： \033[0m") " TIME
+        read -p "$(echo -e "\033[1;4;47;31m 请输入新的IP刷新间隔（min）： ${TE}") " TIME
         # 更新定时任务，先删除现有的，然后添加新的
         (crontab -l | grep -v "$DDNSIP_SCRIPT"; echo "*/$TIME * * * * /bin/bash $DDNSIP_SCRIPT") | crontab -
         existing_job=$(crontab -l | grep "$DDNSIP_SCRIPT")
         interval=$(echo "$existing_job" | sed -E 's|^\*/([0-9]+).*|\1|')
         interval="$interval 分钟"
-        echo -e "\033[1;4;47;31m 定时任务已更新，脚本运行成功！当前IP刷新间隔为：$interval \033[0m"
+        echo -e "\033[1;4;47;31m 定时任务已更新，脚本运行成功！当前IP刷新间隔为：$interval ${TE}"
     else
-        echo -e "\033[1;4;47;31m 使用现有定时任务，脚本运行完毕！ \033[0m"
+        echo -e "\033[1;4;47;31m 使用现有定时任务，脚本运行完毕！ ${TE}"
     fi
 fi
