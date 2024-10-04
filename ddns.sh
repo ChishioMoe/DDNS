@@ -199,6 +199,20 @@ send_telegram_message() {
 # 获取当前公网IP
 NEW_IPv4=$(curl -s http://ipv4.icanhazip.com)
 NEW_IPv6=$(curl -s http://ipv6.icanhazip.com)
+
+# 保存上次 IP 地址的文件
+LAST_IP_FILE="/etc/last_ip.txt"
+
+# 获取上次保存的 IPv4 地址
+if [ -f "$LAST_IP_FILE" ]; then
+    LAST_IPv4=$(grep "IPv4" "$LAST_IP_FILE" | cut -d'=' -f2)
+    LAST_IPv6=$(grep "IPv6" "$LAST_IP_FILE" | cut -d'=' -f2)
+else
+    LAST_IPv4=""
+    LAST_IPv6=""
+fi
+
+
 # 保留一级域名
 DDNS_TLD=$(echo "$DDNS_DOMAIN" | sed 's/.*\.\([^.]*\.[^.]*\)$/\1/')
 
@@ -216,20 +230,33 @@ RECORD_ID=$(
 
 
 if [ -n "$NEW_IPv4" ] ; then
+    echo -e "\033[33mIP已更新为：\033[0m\033[1;4;47;31m $NEW_IPv4 \033[0m"
+    if [ "$NEW_IPv4" != "$LAST_IPv4" ]; then
   curl -s -k -X PUT "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$RECORD_ID" \
     -H "Authorization: Bearer $API_TOKEN" \
     -H "Content-Type: application/json" \
     --data '{"type":"A","name":"'$DDNS_DOMAIN'","content":"'$NEW_IPv4'","ttl":1,"proxied":false}' &> /dev/null
     
-  echo -e "\033[33mIP已更新为：\033[0m\033[1;4;47;31m $NEW_IPv4 \033[0m"
+# 记录新的 IP 地址
+        echo "IPv4=$NEW_IPv4" > "$LAST_IP_FILE"
   send_telegram_message "服务器：$SERVER_NAME，IP 已更新为：$NEW_IPv4"
+    else
+        echo "IP 未发生变化，不发送通知。"
+    fi
 elif [ -n "$NEW_IPv6" ] ; then
+    echo -e "\033[33mIP已更新为：\033[0m\033[1;4;47;31m $NEW_IPv6 \033[0m"
+    if [ "$NEW_IPv6" != "$LAST_IPv6" ]; then
   curl -s -k -X PUT "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$RECORD_ID" \
     -H "Authorization: Bearer $API_TOKEN" \
     -H "Content-Type: application/json" \
     --data '{"type":"AAAA","name":"'$DDNS_DOMAIN'","content":"'$NEW_IPv6'","ttl":1,"proxied":false}' &> /dev/null
-  echo -e "\033[33mIP已更新为：\033[0m\033[1;4;47;31m $NEW_IPv6 \033[0m"
-  send_telegram_message "服务器：$SERVER_NAME，IP 已更新为：$NEW_IPv4"
+
+# 记录新的 IP 地址
+        echo "IPv6=$NEW_IPv6" > "$LAST_IP_FILE"
+  send_telegram_message "服务器：$SERVER_NAME，IP 已更新为：$NEW_IPv6"
+    else
+        echo "IP 未发生变化，不发送通知。"
+    fi
 else
   if [ -z "$NEW_IPv4" ] ; then
     echo " Failed to get IPv4 address" 
