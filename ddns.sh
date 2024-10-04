@@ -129,8 +129,34 @@ set_ddnscfg() {
     echo "API_TOKEN=\"$API_TOKEN\"" >> "$CONFIG_FILE"
     echo "DDNS_DOMAIN=\"$DDNS_DOMAIN\"" >> "$CONFIG_FILE"
 
+     # 检查是否启用 Telegram 通知功能
+    read -p "$(echo -e "是否启用 Telegram 通知功能？(y/n)：${TE}") " ENABLE_TELEGRAM
+    if [[ "$ENABLE_TELEGRAM" == "y" ]]; then
+        read -p "$(echo -e "是否更新Telegram Bot Token和Chat ID？(y/n)：${TE}") " UPDATE_TELEGRAM
+        if [[ "$UPDATE_TELEGRAM" == "y" ]]; then
+            read -p "$(echo -e "为了方便记忆，请输入你的${RED}服务器备注：${TE}") " SERVER_NAME
+            read -p "$(echo -e "请输入你的${RED}Telegram Bot Token：${TE}") " bot_token
+            read -p "$(echo -e "请输入你的${RED}Telegram Chat ID：${TE}") " chat_id
+
+            # 写入配置文件
+            echo "SERVER_NAME=\"$SERVER_NAME\"" >> "$CONFIG_FILE"
+            echo "BOT_TOKEN=\"$bot_token\"" >> "$CONFIG_FILE"
+            echo "CHAT_ID=\"$chat_id\"" >> "$CONFIG_FILE"
+
+            echo "Telegram Bot Token 和 Chat ID 更新成功！"
+        else
+            echo "使用现有的 Telegram 配置。"
+        fi
+    else
+        # 如果不启用 Telegram，则删除配置文件中的相关配置
+        sed -i '/BOT_TOKEN/d' "$CONFIG_FILE"
+        sed -i '/CHAT_ID/d' "$CONFIG_FILE"
+        echo "Telegram 通知功能未启用，相关配置已删除。"
+    fi
+
     echo "配置文件设置成功！"
 }
+
 if [ ! -f "$CONFIG_FILE" ]; then
     set_ddnscfg
 else
@@ -141,6 +167,7 @@ else
         echo "使用现有配置文件"
     fi
 fi
+
 
 # 检查 ddnsip.sh 脚本是否存在，创建ip更新脚本
 CRON_DIR="/etc/cron.d"
@@ -158,6 +185,17 @@ echo -e "当前API_TOKEN为: \033[4;33m$API_TOKEN\033[0m"
 echo -e "当前域名为: \033[4;33m$DDNS_DOMAIN\033[0m"
 echo "脚本运行中..."
 # 加载配置文件
+send_telegram_message() {
+    local message="$1"
+    if [[ -z "$BOT_TOKEN" || -z "$CHAT_ID" ]]; then
+        echo "未配置 Telegram Bot Token 或 Chat ID，无法发送消息。"
+        return
+    fi
+    local url="https://api.telegram.org/bot$BOT_TOKEN/sendMessage"
+
+    curl -s -X POST "$url" -d "chat_id=$CHAT_ID&text=$message" &> /dev/null
+   
+}
 # 获取当前公网IP
 NEW_IPv4=$(curl -s http://ipv4.icanhazip.com)
 NEW_IPv6=$(curl -s http://ipv6.icanhazip.com)
@@ -184,12 +222,14 @@ if [ -n "$NEW_IPv4" ] ; then
     --data '{"type":"A","name":"'$DDNS_DOMAIN'","content":"'$NEW_IPv4'","ttl":1,"proxied":false}' &> /dev/null
     
   echo -e "\033[33mIP已更新为：\033[0m\033[1;4;47;31m $NEW_IPv4 \033[0m"
+  send_telegram_message "服务器：$SERVER_NAME，IP 已更新为：$NEW_IPv4"
 elif [ -n "$NEW_IPv6" ] ; then
   curl -s -k -X PUT "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$RECORD_ID" \
     -H "Authorization: Bearer $API_TOKEN" \
     -H "Content-Type: application/json" \
     --data '{"type":"AAAA","name":"'$DDNS_DOMAIN'","content":"'$NEW_IPv6'","ttl":1,"proxied":false}' &> /dev/null
   echo -e "\033[33mIP已更新为：\033[0m\033[1;4;47;31m $NEW_IPv6 \033[0m"
+  send_telegram_message "服务器：$SERVER_NAME，IP 已更新为：$NEW_IPv4"
 else
   if [ -z "$NEW_IPv4" ] ; then
     echo " Failed to get IPv4 address" 
